@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link, NavLink, Route, Routes, useLocation, useSearchParams } from 'react-router-dom'
 import {
-  Activity, ArrowDownRight, ArrowRight, ArrowUpRight, BrainCircuit, Check, Code2,
+  Activity, AlertCircle, ArrowDownRight, ArrowRight, ArrowUpRight, BrainCircuit, Check, Code2,
   Cpu, Layers3, Lightbulb, Mail, Menu, Network, Orbit, ShieldCheck, Sparkles, X
 } from 'lucide-react'
 
@@ -680,6 +680,8 @@ function Contact() {
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [submissionId, setSubmissionId] = useState('')
+  const [submissionTimestamp, setSubmissionTimestamp] = useState('')
+  const [emailStatus, setEmailStatus] = useState<{ sent: boolean; recipient?: string; message?: string } | null>(null)
   const [showEmailPreview, setShowEmailPreview] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({
@@ -715,29 +717,36 @@ function Contact() {
     setLoading(true)
 
     try {
-      // Attempt sending to serverless API endpoint
-      const response = await fetch('/api/contact', {
+      // Dispatch transactional email via secure server-side API route
+      const response = await fetch('/api/send-confirmation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        setSubmissionId(data.submissionId || `GEN-${Date.now().toString(36).toUpperCase()}`)
+      const data = await response.json().catch(() => null)
+
+      if (response.ok && data?.success) {
+        setSubmissionId(data.id || `GEN-${Date.now().toString(36).toUpperCase()}`)
+        setSubmissionTimestamp(data.submittedAt || new Date().toUTCString())
+        setEmailStatus({
+          sent: data.emailSent ?? true,
+          recipient: data.recipient || form.email,
+          message: data.message || `Confirmation email dispatched to ${form.email}`,
+        })
         setSubmitted(true)
+        setError('')
       } else {
-        // Fallback for static/local preview environments without a running serverless backend
-        console.warn('API returned non-200. Falling back to local confirmation.')
-        const fallbackId = `GEN-MOCK-${Date.now().toString(36).toUpperCase()}`
-        setSubmissionId(fallbackId)
-        setSubmitted(true)
+        // Explicit delivery or validation failure from server
+        const failureMessage =
+          data?.error ||
+          data?.message ||
+          `Submission failed (${response.status}: ${response.statusText}). Please verify your connection or email configuration.`
+        setError(failureMessage)
       }
-    } catch (err) {
-      console.warn('Network fetch error. Using local confirmation with email draft fallback:', err)
-      const fallbackId = `GEN-OFFLINE-${Date.now().toString(36).toUpperCase()}`
-      setSubmissionId(fallbackId)
-      setSubmitted(true)
+    } catch (err: any) {
+      console.error('Contact form submission error:', err)
+      setError(`Network error: Unable to reach email service. ${err?.message || ''}`)
     } finally {
       setLoading(false)
     }
@@ -793,11 +802,24 @@ function Contact() {
               <span>Enquiry Successfully Logged!</span>
             </div>
             <p style={{ color: '#cbd5e1', fontSize: '13px', lineHeight: '1.7', margin: 0 }}>
-              Thank you, <b>{form.name}</b>. We have received your message regarding <b>{form.topic}</b>. Our engineering team will review your notes and respond to <b>{form.email}</b> within 24–48 hours.
+              Thank you, <b>{form.name}</b>. We have received your message regarding <b>{form.topic}</b>. A transactional confirmation email has been dispatched to <b>{form.email}</b>. Our engineering team will review your notes and respond within 24–48 business hours.
             </p>
-            <div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <span className="form-ref-code">Reference ID: {submissionId}</span>
+              {submissionTimestamp && (
+                <span style={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'monospace' }}>
+                  Logged at: {submissionTimestamp}
+                </span>
+              )}
             </div>
+
+            {emailStatus?.sent && (
+              <div className="form-email-badge">
+                <Mail size={13} />
+                <span>Live confirmation email dispatched to <b>{emailStatus.recipient}</b></span>
+              </div>
+            )}
+
             <div style={{ display: 'flex', gap: '10px', marginTop: '12px', flexWrap: 'wrap' }}>
               <button
                 type="button"
@@ -812,6 +834,7 @@ function Contact() {
                 className="button button-quiet form-reset-btn"
                 onClick={() => {
                   setSubmitted(false)
+                  setEmailStatus(null)
                   setForm({ name: '', email: '', topic: 'AI & machine learning', message: '', honeypot: '' })
                 }}
               >
@@ -828,6 +851,15 @@ function Contact() {
           </div>
         ) : (
           <form className="contact-form" onSubmit={handleSubmit}>
+            {error && (
+              <div className="form-error-banner" role="alert">
+                <AlertCircle size={20} className="error-icon" />
+                <div className="error-content">
+                  <strong>Email Delivery Alert</strong>
+                  <p>{error}</p>
+                </div>
+              </div>
+            )}
             {/* Honeypot field (hidden from screen) */}
             <input
               type="text"
@@ -927,6 +959,7 @@ function Contact() {
             service_area: form.topic,
             reference_id: submissionId,
             support_email: 'support@genaitechnologies.com',
+            submitted_at: submissionTimestamp || new Date().toUTCString(),
           }}
           onClose={() => setShowEmailPreview(false)}
         />

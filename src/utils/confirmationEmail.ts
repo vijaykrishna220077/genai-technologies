@@ -4,9 +4,11 @@ export interface EmailConfirmationData {
   service_area: string
   reference_id: string
   support_email: string
+  submitted_at?: string
 }
 
 export function renderConfirmationEmailText(data: EmailConfirmationData): string {
+  const timeStr = data.submitted_at || new Date().toUTCString()
   return `Hello ${data.user_name},
 
 Thank you for reaching out to GenAI Technologies. We have received your enquiry regarding ${data.service_area}.
@@ -17,6 +19,7 @@ ENQUIRY DETAILS
 Reference ID:    ${data.reference_id}
 Submitted Email: ${data.user_email}
 Service Area:    ${data.service_area}
+Submission Time: ${timeStr}
 Status:          Under Engineering Review
 Expected Review: Within 24–48 business hours
 
@@ -42,6 +45,7 @@ Built for what comes next.`
 }
 
 export function renderConfirmationEmailHtml(data: EmailConfirmationData): string {
+  const timeStr = data.submitted_at || new Date().toUTCString()
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 <head>
@@ -131,6 +135,10 @@ export function renderConfirmationEmailHtml(data: EmailConfirmationData): string
                       <tr>
                         <td align="left" style="font-size: 13px; color: #94a3b8; padding: 4px 0;">Category:</td>
                         <td align="right" style="font-size: 13px; color: #f1f5f9; padding: 4px 0; font-weight: 500;">${data.service_area}</td>
+                      </tr>
+                      <tr>
+                        <td align="left" style="font-size: 13px; color: #94a3b8; padding: 4px 0;">Submission Time:</td>
+                        <td align="right" style="font-size: 13px; color: #f1f5f9; padding: 4px 0; font-weight: 500;">${timeStr}</td>
                       </tr>
                       <tr>
                         <td align="left" style="font-size: 13px; color: #94a3b8; padding: 4px 0;">Expected Review:</td>
