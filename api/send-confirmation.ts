@@ -438,6 +438,8 @@ export default async function handler(req: any, res: any) {
       emailSent,
       messageId: providerId,
       recipient: email,
+      actualRecipient: sandboxNotice ? adminEmail : email,
+      isSandbox: Boolean(sandboxNotice),
       submittedAt: submissionTime,
       sandboxNotice,
       message: emailSent

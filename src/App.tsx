@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Link, NavLink, Route, Routes, useLocation, useSearchParams } from 'react-router-dom'
 import {
   Activity, AlertCircle, ArrowDownRight, ArrowRight, ArrowUpRight, BrainCircuit, Check, Code2,
-  Cpu, Layers3, Lightbulb, Mail, Menu, Network, Orbit, ShieldCheck, Sparkles, X
+  Cpu, Info, Layers3, Lightbulb, Mail, Menu, Network, Orbit, ShieldCheck, Sparkles, X
 } from 'lucide-react'
 
 import GenAILogo from './components/GenAILogo'
@@ -681,7 +681,13 @@ function Contact() {
   const [submitted, setSubmitted] = useState(false)
   const [submissionId, setSubmissionId] = useState('')
   const [submissionTimestamp, setSubmissionTimestamp] = useState('')
-  const [emailStatus, setEmailStatus] = useState<{ sent: boolean; recipient?: string; message?: string } | null>(null)
+  const [emailStatus, setEmailStatus] = useState<{
+    sent: boolean
+    recipient?: string
+    actualRecipient?: string
+    isSandbox?: boolean
+    message?: string
+  } | null>(null)
   const [showEmailPreview, setShowEmailPreview] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({
@@ -728,10 +734,21 @@ function Contact() {
 
       if (response.ok && data?.success) {
         setSubmissionId(data.id || `GEN-${Date.now().toString(36).toUpperCase()}`)
-        setSubmissionTimestamp(data.submittedAt || new Date().toUTCString())
+        // Format strictly in user's local browser timezone
+        const localFormattedTime = new Date().toLocaleString(undefined, {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+        })
+        setSubmissionTimestamp(localFormattedTime)
         setEmailStatus({
           sent: data.emailSent ?? true,
           recipient: data.recipient || form.email,
+          actualRecipient: data.actualRecipient,
+          isSandbox: Boolean(data.isSandbox || data.sandboxNotice),
           message: data.message || `Confirmation email dispatched to ${form.email}`,
         })
         setSubmitted(true)
@@ -813,12 +830,25 @@ function Contact() {
               )}
             </div>
 
-            {emailStatus?.sent && (
+            {emailStatus?.isSandbox ? (
+              <div className="form-sandbox-alert">
+                <Info size={16} className="sandbox-icon" />
+                <div>
+                  <strong>Resend Sandbox Delivery Notice:</strong>
+                  <p>
+                    Because Resend is currently in sandbox testing mode (<code>onboarding@resend.dev</code>), this email was safely delivered to your registered administrator account (<b>{emailStatus.actualRecipient || 'genaiinformationprivatelimited@gmail.com'}</b>).
+                  </p>
+                  <p style={{ marginTop: '5px', fontSize: '11px', color: '#94a3b8' }}>
+                    To deliver live emails directly to <b>{form.email}</b> or any external client, verify your domain in the <a href="https://resend.com/domains" target="_blank" rel="noopener noreferrer" style={{ color: '#9b7cff', textDecoration: 'underline' }}>Resend Domains Dashboard</a>.
+                  </p>
+                </div>
+              </div>
+            ) : emailStatus?.sent ? (
               <div className="form-email-badge">
                 <Mail size={13} />
                 <span>Live confirmation email dispatched to <b>{emailStatus.recipient}</b></span>
               </div>
-            )}
+            ) : null}
 
             <div style={{ display: 'flex', gap: '10px', marginTop: '12px', flexWrap: 'wrap' }}>
               <button
