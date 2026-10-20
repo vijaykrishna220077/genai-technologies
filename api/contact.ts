@@ -1,5 +1,11 @@
-// Serverless API route for contact form submission
+// Serverless API route for contact form submission & automated confirmation email
 // Compatible with Vercel Serverless Functions and Node.js runtimes
+
+import {
+  renderConfirmationEmailText,
+  renderConfirmationEmailHtml,
+  type EmailConfirmationData,
+} from './templates/confirmationEmail'
 
 export default async function handler(req: any, res: any) {
   // Set CORS headers
@@ -43,8 +49,73 @@ export default async function handler(req: any, res: any) {
     }
 
     const submissionId = `GEN-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`
+    const supportEmail = process.env.SUPPORT_EMAIL || 'support@genaitechnologies.com'
 
-    // If an external webhook (e.g. Slack/Discord/Formspree/Resend) is provided via env, dispatch it:
+    // Build template variables
+    const emailData: EmailConfirmationData = {
+      user_name: name.trim(),
+      user_email: email.trim(),
+      service_area: topic || 'General AI & Software Innovation',
+      reference_id: submissionId,
+      support_email: supportEmail,
+    }
+
+    const textBody = renderConfirmationEmailText(emailData)
+    const htmlBody = renderConfirmationEmailHtml(emailData)
+
+    // 1. Transactional Email Dispatch via Resend (if RESEND_API_KEY configured)
+    const resendApiKey = process.env.RESEND_API_KEY
+    if (resendApiKey) {
+      try {
+        const fromAddress = process.env.RESEND_FROM_EMAIL || 'GenAI Technologies <notifications@genaitechnologies.com>'
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: fromAddress,
+            to: [email.trim()],
+            reply_to: supportEmail,
+            subject: `We've received your enquiry [Ref: ${submissionId}]`,
+            text: textBody,
+            html: htmlBody,
+          }),
+        })
+      } catch (emailErr) {
+        console.error('Failed to dispatch transactional email via Resend:', emailErr)
+      }
+    }
+
+    // 2. Transactional Email Dispatch via SendGrid (if SENDGRID_API_KEY configured)
+    const sendgridApiKey = process.env.SENDGRID_API_KEY
+    if (sendgridApiKey && !resendApiKey) {
+      try {
+        const fromAddress = process.env.SENDGRID_FROM_EMAIL || 'hello@genaitechnologies.com'
+        await fetch('https://api.sendgrid.com/v3/mail/send', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${sendgridApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            personalizations: [{ to: [{ email: email.trim() }] }],
+            from: { email: fromAddress, name: 'GenAI Technologies' },
+            reply_to: { email: supportEmail, name: 'GenAI Support' },
+            subject: `We've received your enquiry [Ref: ${submissionId}]`,
+            content: [
+              { type: 'text/plain', value: textBody },
+              { type: 'text/html', value: htmlBody },
+            ],
+          }),
+        })
+      } catch (sgErr) {
+        console.error('Failed to dispatch transactional email via SendGrid:', sgErr)
+      }
+    }
+
+    // 3. Optional Team Notification Webhook (Slack / Discord / Webhook)
     const webhookUrl = process.env.CONTACT_WEBHOOK_URL
     if (webhookUrl) {
       try {
@@ -57,8 +128,8 @@ export default async function handler(req: any, res: any) {
             name: name.trim(),
             email: email.trim(),
             topic: topic || 'General Enquiry',
-            message: message.trim()
-          })
+            message: message.trim(),
+          }),
         })
       } catch (webhookErr) {
         console.error('Webhook notification dispatch warning:', webhookErr)
@@ -68,13 +139,19 @@ export default async function handler(req: any, res: any) {
     return res.status(200).json({
       success: true,
       submissionId,
-      message: 'Your enquiry has been successfully logged. Our engineering team will review it shortly.'
+      message: 'Your enquiry has been successfully logged. Our engineering team will review it shortly.',
+      confirmationEmail: {
+        to: email.trim(),
+        referenceId: submissionId,
+        textPreview: textBody,
+        htmlPreview: htmlBody,
+      },
     })
   } catch (error: any) {
     console.error('Contact API Error:', error)
     return res.status(500).json({
       success: false,
-      message: 'Internal server error while processing your request. Please try again or reach out directly.'
+      message: 'Internal server error while processing your request. Please try again or reach out directly.',
     })
   }
 }

@@ -1129,3 +1129,67 @@
   transform: translateY(0);
 }
 
+/* Email Preview Modal Controls */
+.email-preview-controls-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 24px;
+  background: #080b18;
+  border-bottom: 1px solid rgba(180, 190, 230, 0.1);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.email-tab-group {
+  display: flex;
+  gap: 6px;
+}
+.email-tab-btn {
+  background: transparent;
+  border: 1px solid rgba(180, 190, 230, 0.12);
+  border-radius: 6px;
+  padding: 6px 12px;
+  color: #94a3b8;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.email-tab-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+.email-tab-btn.active {
+  color: #ffffff;
+  background: rgba(140, 105, 255, 0.18);
+  border-color: rgba(140, 105, 255, 0.45);
+  font-weight: 600;
+}
+.email-view-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.view-toggle-wrap {
+  display: flex;
+  border: 1px solid rgba(180, 190, 230, 0.14);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.view-toggle-btn {
+  background: transparent;
+  border: 0;
+  padding: 6px 9px;
+  color: #94a3b8;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.view-toggle-btn:hover {
+  color: #ffffff;
+}
+.view-toggle-btn.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #9b7cff;
+}
+
+

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Link, NavLink, Route, Routes, useLocation, useSearchParams } from 'react-router-dom'
 import {
   Activity, ArrowDownRight, ArrowRight, ArrowUpRight, BrainCircuit, Check, Code2,
-  Cpu, Layers3, Lightbulb, Menu, Network, Orbit, ShieldCheck, Sparkles, X
+  Cpu, Layers3, Lightbulb, Mail, Menu, Network, Orbit, ShieldCheck, Sparkles, X
 } from 'lucide-react'
 
 import GenAILogo from './components/GenAILogo'
@@ -11,6 +11,7 @@ import Privacy from './components/Privacy'
 import { projectsData, type ProjectItem } from './data/projectsData'
 import { KisanAlertMockup, TalentMatchMockup, CognitiveFlowMockup } from './components/ProjectMockups'
 import ProjectDetailModal from './components/ProjectDetailModal'
+import EmailPreviewModal from './components/EmailPreviewModal'
 import NeuralCanvas from './components/NeuralCanvas'
 import useScrollReveal from './hooks/useScrollReveal'
 
@@ -679,6 +680,7 @@ function Contact() {
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [submissionId, setSubmissionId] = useState('')
+  const [showEmailPreview, setShowEmailPreview] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({
     name: '',
@@ -796,7 +798,15 @@ function Contact() {
             <div>
               <span className="form-ref-code">Reference ID: {submissionId}</span>
             </div>
-            <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '12px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="button form-reset-btn"
+                style={{ background: 'linear-gradient(135deg, rgba(155, 124, 255, 0.25), rgba(91, 229, 255, 0.2))', borderColor: 'rgba(155, 124, 255, 0.4)' }}
+                onClick={() => setShowEmailPreview(true)}
+              >
+                <Mail size={14} /> Preview Confirmation Email
+              </button>
               <button
                 type="button"
                 className="button button-quiet form-reset-btn"
@@ -908,6 +918,19 @@ function Contact() {
           </form>
         )}
       </section>
+
+      {showEmailPreview && (
+        <EmailPreviewModal
+          data={{
+            user_name: form.name,
+            user_email: form.email,
+            service_area: form.topic,
+            reference_id: submissionId,
+            support_email: 'support@genaitechnologies.com',
+          }}
+          onClose={() => setShowEmailPreview(false)}
+        />
+      )}
     </>
   )
 }
