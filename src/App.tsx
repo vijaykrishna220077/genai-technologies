@@ -11,6 +11,9 @@ import Privacy from './components/Privacy'
 import { projectsData, type ProjectItem } from './data/projectsData'
 import { KisanAlertMockup, TalentMatchMockup, CognitiveFlowMockup } from './components/ProjectMockups'
 import ProjectDetailModal from './components/ProjectDetailModal'
+import NeuralCanvas from './components/NeuralCanvas'
+import SystemSimulator from './components/SystemSimulator'
+import useScrollReveal from './hooks/useScrollReveal'
 
 const navItems = [
   { label: 'Home', to: '/' },
@@ -206,7 +209,8 @@ function Home() {
 
   return (
     <>
-      <section className="hero container">
+      <section className="hero container" style={{ position: 'relative' }}>
+        <NeuralCanvas />
         <div className="hero-copy">
           <span className="eyebrow">
             <span className="eyebrow-dot" />
@@ -260,13 +264,13 @@ function Home() {
               <GenAILogo size={72} glow={true} />
             </div>
           </div>
-          <span className="art-node node-a">
+          <span className="art-node node-a" title="Latency: 18ms">
             <Sparkles size={16} />
           </span>
-          <span className="art-node node-b">
+          <span className="art-node node-b" title="Throughput: 1.8M msg/s">
             <Cpu size={17} />
           </span>
-          <span className="art-node node-c">
+          <span className="art-node node-c" title="Durable State Checkpoint">
             <Layers3 size={16} />
           </span>
           <div className="art-caption">
@@ -279,23 +283,43 @@ function Home() {
         </div>
       </section>
 
-      <section className="ticker" aria-label="Our areas of focus">
-        <div className="container ticker-inner">
+      {/* Infinite Smooth Marquee Ticker */}
+      <section className="marquee-container" aria-label="Our areas of focus">
+        <div className="marquee-track">
           {[
             'Artificial intelligence',
             'Computer vision & ViTs',
             'Semantic vector ranking',
             'Agentic DAG orchestration',
             'Responsible innovation',
-          ].map((x, i) => (
-            <span key={x}>
-              {i > 0 && <i />} {x}
+            'Sentinel-2 satellite telemetry',
+            'pgvector & hybrid retrieval',
+            'Edge inference optimization',
+          ].map(x => (
+            <span className="marquee-item" key={x}>
+              <i /> {x}
+            </span>
+          ))}
+        </div>
+        <div className="marquee-track" aria-hidden="true">
+          {[
+            'Artificial intelligence',
+            'Computer vision & ViTs',
+            'Semantic vector ranking',
+            'Agentic DAG orchestration',
+            'Responsible innovation',
+            'Sentinel-2 satellite telemetry',
+            'pgvector & hybrid retrieval',
+            'Edge inference optimization',
+          ].map(x => (
+            <span className="marquee-item" key={`${x}-dup`}>
+              <i /> {x}
             </span>
           ))}
         </div>
       </section>
 
-      <section className="section container intro-section">
+      <section className="section container intro-section reveal-on-scroll">
         <div className="intro-label">
           <span className="eyebrow">01 — Who we are</span>
           <span className="intro-vertical">GENAI TECHNOLOGIES / EST. WITH AMBITION</span>
@@ -314,8 +338,13 @@ function Home() {
         </div>
       </section>
 
+      {/* Interactive System Simulator Playground */}
+      <div className="reveal-on-scroll">
+        <SystemSimulator />
+      </div>
+
       {/* Featured Live System Visualizer */}
-      <section className="section section-soft">
+      <section className="section section-soft reveal-on-scroll">
         <div className="container">
           <SectionHeading
             eyebrow="Featured System"
@@ -939,6 +968,8 @@ function NotFound() {
 }
 
 export default function App() {
+  useScrollReveal()
+
   return (
     <>
       <SEO />
