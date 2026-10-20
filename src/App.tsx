@@ -12,7 +12,6 @@ import { projectsData, type ProjectItem } from './data/projectsData'
 import { KisanAlertMockup, TalentMatchMockup, CognitiveFlowMockup } from './components/ProjectMockups'
 import ProjectDetailModal from './components/ProjectDetailModal'
 import NeuralCanvas from './components/NeuralCanvas'
-import SystemSimulator from './components/SystemSimulator'
 import useScrollReveal from './hooks/useScrollReveal'
 
 const navItems = [
@@ -337,11 +336,6 @@ function Home() {
           </Link>
         </div>
       </section>
-
-      {/* Interactive System Simulator Playground */}
-      <div className="reveal-on-scroll">
-        <SystemSimulator />
-      </div>
 
       {/* Featured Live System Visualizer */}
       <section className="section section-soft reveal-on-scroll">
